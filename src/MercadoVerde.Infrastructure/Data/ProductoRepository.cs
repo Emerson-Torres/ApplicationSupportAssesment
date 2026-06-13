@@ -15,13 +15,13 @@ public class ProductoRepository : IProductoRepository
     }
 
     // Búsqueda de productos por nombre para el catálogo público.
-    // El término de búsqueda llega directamente desde la query string del usuario.
+    // Usa LINQ para que EF Core parametrice el valor automáticamente (sin inyección SQL).
     public List<Producto> BuscarPorNombre(string termino)
     {
-        // Se arma la consulta SQL concatenando el texto recibido del usuario.
-        // (Búsqueda sin distinguir mayúsculas/minúsculas, como el catálogo público.)
-        var sql = "SELECT * FROM \"Productos\" WHERE \"Activo\" = true AND LOWER(\"Nombre\") LIKE '%" + termino.ToLower() + "%'";
-        return _db.Productos.FromSqlRaw(sql).ToList();
+        var terminoLower = termino.ToLower();
+        return _db.Productos
+            .Where(p => p.Activo && p.Nombre.ToLower().Contains(terminoLower))
+            .ToList();
     }
 
     public Producto? ObtenerPorId(int id) => _db.Productos.FirstOrDefault(p => p.Id == id);
