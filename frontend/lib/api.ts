@@ -45,8 +45,11 @@ export async function obtenerReporteVentas(
   desde: string,
   hasta: string
 ): Promise<FilaReporte[]> {
+  const desdeUtc = `${desde}T00:00:00`;
+  const hastaUtc = `${hasta}T23:59:59.999`;
+
   const res = await fetch(
-    `${API_BASE}/api/reportes/ventas?desde=${desde}&hasta=${hasta}`
+    `${API_BASE}/api/reportes/ventas?desde=${encodeURIComponent(desdeUtc)}&hasta=${encodeURIComponent(hastaUtc)}`
   );
 
   if (!res.ok) {
