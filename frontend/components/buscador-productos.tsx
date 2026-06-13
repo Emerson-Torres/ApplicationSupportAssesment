@@ -72,12 +72,9 @@ export function BuscadorProductos() {
 
         {buscado && (
           <div className="space-y-4">
-            <p
-              className="text-sm text-muted-foreground"
-              dangerouslySetInnerHTML={{
-                __html: `Resultados para <strong>${termino}</strong> — ${resultados.length} producto(s).`,
-              }}
-            />
+            <p className="text-sm text-muted-foreground">
+              Resultados para <span className="font-medium text-foreground">{termino}</span> — {resultados.length} producto(s).
+            </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
               {resultados.map((p) => (
@@ -86,10 +83,7 @@ export function BuscadorProductos() {
                   className="flex items-center justify-between rounded-lg border p-4"
                 >
                   <div className="space-y-1">
-                    <p
-                      className="font-medium"
-                      dangerouslySetInnerHTML={{ __html: p.Nombre }}
-                    />
+                    <p className="font-medium">{p.Nombre}</p>
                     <p className="text-sm text-muted-foreground">
                       {formatearMoneda(p.Precio)}
                     </p>
