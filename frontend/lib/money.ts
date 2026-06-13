@@ -11,13 +11,18 @@ export interface LineaResumen {
   cantidad: number;
 }
 
+// Normaliza los montos a centavos para evitar artefactos de coma flotante.
+export function redondearMoneda(monto: number): number {
+  return Math.round((monto + Number.EPSILON) * 100) / 100;
+}
+
 // Calcula el subtotal del pedido sumando línea por línea.
 export function calcularSubtotal(lineas: LineaResumen[]): number {
   let subtotal = 0;
   for (const l of lineas) {
-    subtotal += l.precioUnitario * l.cantidad;
+    subtotal = redondearMoneda(subtotal + redondearMoneda(l.precioUnitario * l.cantidad));
   }
-  return subtotal;
+  return redondearMoneda(subtotal);
 }
 
 // Calcula el total estimado a cobrar.
@@ -27,12 +32,13 @@ export function calcularTotalEstimado(
   porcentajeCupon: number
 ): number {
   const subtotal = calcularSubtotal(lineas);
-  const impuesto = subtotal * TASA_IMPUESTO;
-  const descuento = subtotal * (porcentajeCupon / 100);
-  return subtotal + impuesto - descuento;
+  const descuento = redondearMoneda(subtotal * (porcentajeCupon / 100));
+  const baseImponible = redondearMoneda(subtotal - descuento);
+  const impuesto = redondearMoneda(baseImponible * TASA_IMPUESTO);
+  return redondearMoneda(baseImponible + impuesto);
 }
 
 // Formatea un monto para mostrarlo en la interfaz.
 export function formatearMoneda(monto: number): string {
-  return "$" + monto.toFixed(2);
+  return "$" + redondearMoneda(monto).toFixed(2);
 }

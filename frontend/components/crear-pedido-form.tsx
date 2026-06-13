@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { crearPedido } from "@/lib/api";
-import { calcularTotalEstimado, formatearMoneda } from "@/lib/money";
+import { calcularTotalEstimado, formatearMoneda, redondearMoneda } from "@/lib/money";
 import type { Pedido } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -174,7 +174,9 @@ export function CrearPedidoForm() {
                   />
                 </div>
                 <div className="w-28 pb-2 text-right text-sm">
-                  {linea.precioUnitario * linea.cantidad}
+                  {formatearMoneda(
+                    redondearMoneda(linea.precioUnitario * linea.cantidad)
+                  )}
                 </div>
                 <Button
                   variant="ghost"
