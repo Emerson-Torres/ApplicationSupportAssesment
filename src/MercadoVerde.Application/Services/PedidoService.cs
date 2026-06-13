@@ -59,7 +59,7 @@ public class PedidoService
             var cupon = _db.Cupones.FirstOrDefault(c => c.Codigo == dto.CodigoCupon);
 
             // Validar vigencia del cupón
-            if (cupon.FechaExpiracionUtc >= DateTime.Now && cupon.Activo)
+            if (cupon != null && cupon.FechaExpiracionUtc >= DateTime.Now && cupon.Activo)
             {
                 descuento = subtotal * (cupon.PorcentajeDescuento / 100m);
             }
@@ -110,6 +110,7 @@ public class PedidoService
     public string GenerarLineaComprobante(Pedido pedido)
     {
         var cliente = _db.Clientes.FirstOrDefault(c => c.Id == pedido.ClienteId);
-        return $"Comprobante para {cliente.Email.ToUpper()} - Total: {pedido.Total:C}";
+        var email = cliente?.Email?.ToUpperInvariant() ?? "(sin email)";
+        return $"Comprobante para {email} - Total: {pedido.Total:C}";
     }
 }

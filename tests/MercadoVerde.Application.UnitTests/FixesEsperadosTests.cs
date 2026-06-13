@@ -60,7 +60,7 @@ public class FixesEsperadosTests
     // ====================================================================
     // TICK-203 — Un cupón inexistente no debe reventar con NullReference (500)
     // ====================================================================
-    [Fact(Skip = "Esperando fix de TICK-203: un código de cupón inexistente no debe lanzar NullReferenceException.")]
+    [Fact]
     public void TICK203_CuponInexistente_NoLanzaNullReference()
     {
         using var db = NuevaBdEnMemoria();
@@ -77,6 +77,23 @@ public class FixesEsperadosTests
 
         // Aceptable: ignorar el cupón inválido (descuento 0) o un error de dominio
         // controlado. Lo que NO es aceptable es la NullReferenceException actual.
+        act.Should().NotThrow<NullReferenceException>();
+    }
+
+    [Fact]
+    public void TICK203_ClienteSinEmail_NoLanzaNullReference()
+    {
+        using var db = NuevaBdEnMemoria();
+        db.Clientes.Add(new Cliente { Id = 2, Nombre = "Bruno", Email = null });
+        db.Productos.Add(new Producto { Id = 1, Nombre = "Producto", Precio = 50m, Stock = 10, Activo = true });
+        db.SaveChanges();
+
+        var act = () => NuevoServicio(db, new PasarelaAprueba()).CrearPedido(new CrearPedidoDto
+        {
+            ClienteId = 2,
+            Lineas = { new LineaPedidoDto { ProductoId = 1, Cantidad = 1 } }
+        });
+
         act.Should().NotThrow<NullReferenceException>();
     }
 
