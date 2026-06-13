@@ -67,17 +67,22 @@ export function CrearPedidoForm() {
   );
 
   async function enviar() {
+    if (enviando) return;
+
     setEnviando(true);
-    const creado = await crearPedido({
-      ClienteId: Number(clienteId),
-      CodigoCupon: codigoCupon || null,
-      Lineas: lineas.map((l) => ({
-        ProductoId: l.productoId,
-        Cantidad: l.cantidad,
-      })),
-    });
-    setPedido(creado);
-    setEnviando(false);
+    try {
+      const creado = await crearPedido({
+        ClienteId: Number(clienteId),
+        CodigoCupon: codigoCupon || null,
+        Lineas: lineas.map((l) => ({
+          ProductoId: l.productoId,
+          Cantidad: l.cantidad,
+        })),
+      });
+      setPedido(creado);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -187,7 +192,9 @@ export function CrearPedidoForm() {
             </div>
           </div>
 
-          <Button onClick={enviar}>Confirmar y cobrar pedido</Button>
+          <Button onClick={enviar} disabled={enviando} type="button">
+            {enviando ? "Procesando..." : "Confirmar y cobrar pedido"}
+          </Button>
         </CardContent>
       </Card>
 
