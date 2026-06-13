@@ -29,12 +29,20 @@ export function ReporteVentas() {
   const [hasta, setHasta] = useState("2026-06-02");
   const [filas, setFilas] = useState<FilaReporte[]>([]);
   const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function generar() {
+    setError(null);
     setCargando(true);
-    const data = await obtenerReporteVentas(desde, hasta);
-    setFilas(data);
-    setCargando(false);
+    try {
+      const data = await obtenerReporteVentas(desde, hasta);
+      setFilas(data);
+    } catch (err: unknown) {
+      setFilas([]);
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setCargando(false);
+    }
   }
 
   // Total general de todas las ventas del rango.
@@ -50,6 +58,12 @@ export function ReporteVentas() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {error ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            No se pudo generar el reporte: {error}
+          </div>
+        ) : null}
+
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-2">
             <Label htmlFor="desde">Desde</Label>

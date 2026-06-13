@@ -8,14 +8,23 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:5080";
 // Cliente HTTP del panel de soporte.
 // Centraliza las llamadas a la API para el catálogo, los pedidos y los reportes.
 
-export async function buscarProductos(termino: string): Promise<Producto[]> {
+async function leerErrorRespuesta(res: Response): Promise<string> {
   try {
-    const res = await fetch(`${API_BASE}/api/productos/buscar?termino=${termino}`);
     const data = await res.json();
-    return data as Producto[];
+    return data?.title || data?.message || `HTTP ${res.status}`;
   } catch {
-    return [];
+    return `HTTP ${res.status}`;
   }
+}
+
+export async function buscarProductos(termino: string): Promise<Producto[]> {
+  const res = await fetch(`${API_BASE}/api/productos/buscar?termino=${termino}`);
+  if (!res.ok) {
+    throw new Error(await leerErrorRespuesta(res));
+  }
+
+  const data = await res.json();
+  return data as Producto[];
 }
 
 export async function crearPedido(dto: CrearPedidoDto): Promise<Pedido> {
@@ -24,6 +33,11 @@ export async function crearPedido(dto: CrearPedidoDto): Promise<Pedido> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dto),
   });
+
+  if (!res.ok) {
+    throw new Error(await leerErrorRespuesta(res));
+  }
+
   return (await res.json()) as Pedido;
 }
 
@@ -31,13 +45,14 @@ export async function obtenerReporteVentas(
   desde: string,
   hasta: string
 ): Promise<FilaReporte[]> {
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/reportes/ventas?desde=${desde}&hasta=${hasta}`
-    );
-    const data = await res.json();
-    return data as FilaReporte[];
-  } catch {
-    return [];
+  const res = await fetch(
+    `${API_BASE}/api/reportes/ventas?desde=${desde}&hasta=${hasta}`
+  );
+
+  if (!res.ok) {
+    throw new Error(await leerErrorRespuesta(res));
   }
+
+  const data = await res.json();
+  return data as FilaReporte[];
 }

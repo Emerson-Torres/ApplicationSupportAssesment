@@ -42,6 +42,7 @@ export function CrearPedidoForm() {
   ]);
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function agregarLinea() {
     setLineas([...lineas, { productoId: 1, cantidad: 1, precioUnitario: 25.0 }]);
@@ -69,6 +70,7 @@ export function CrearPedidoForm() {
   async function enviar() {
     if (enviando) return;
 
+    setError(null);
     setEnviando(true);
     try {
       const creado = await crearPedido({
@@ -80,6 +82,9 @@ export function CrearPedidoForm() {
         })),
       });
       setPedido(creado);
+    } catch (err: unknown) {
+      setPedido(null);
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setEnviando(false);
     }
@@ -96,6 +101,12 @@ export function CrearPedidoForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {error ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              No se pudo crear el pedido: {error}
+            </div>
+          ) : null}
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="clienteId">Cliente (ID)</Label>

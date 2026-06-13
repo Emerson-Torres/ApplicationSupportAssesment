@@ -22,6 +22,7 @@ export function BuscadorProductos() {
   const [resultados, setResultados] = useState<Producto[]>([]);
   const [buscado, setBuscado] = useState(false);
   const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Búsqueda "mientras escribes": se dispara con cada cambio del término para
   // que los resultados se sientan instantáneos.
@@ -29,22 +30,38 @@ export function BuscadorProductos() {
     if (!termino) {
       setResultados([]);
       setBuscado(false);
+      setError(null);
       return;
     }
     setCargando(true);
-    buscarProductos(termino).then((productos) => {
-      setResultados(productos);
-      setBuscado(true);
-      setCargando(false);
-    });
+    buscarProductos(termino)
+      .then((productos) => {
+        setResultados(productos);
+        setBuscado(true);
+        setError(null);
+      })
+      .catch((err: unknown) => {
+        setResultados([]);
+        setBuscado(true);
+        setError(err instanceof Error ? err.message : "Error desconocido");
+      })
+      .finally(() => setCargando(false));
   }, [termino]);
 
   async function ejecutarBusqueda() {
+    setError(null);
     setCargando(true);
-    const productos = await buscarProductos(termino);
-    setResultados(productos);
-    setBuscado(true);
-    setCargando(false);
+    try {
+      const productos = await buscarProductos(termino);
+      setResultados(productos);
+      setBuscado(true);
+    } catch (err: unknown) {
+      setResultados([]);
+      setBuscado(true);
+      setError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setCargando(false);
+    }
   }
 
   return (
@@ -72,6 +89,12 @@ export function BuscadorProductos() {
 
         {buscado && (
           <div className="space-y-4">
+            {error ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                No se pudo cargar el catálogo: {error}
+              </p>
+            ) : null}
+
             <p className="text-sm text-muted-foreground">
               Resultados para <span className="font-medium text-foreground">{termino}</span> — {resultados.length} producto(s).
             </p>
