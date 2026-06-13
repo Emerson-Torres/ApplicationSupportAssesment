@@ -35,6 +35,7 @@ public class Pedido
     public Cliente? Cliente { get; set; }
     public DateTime FechaUtc { get; set; }
     public string? CodigoCupon { get; set; }
+    public string? NotaSoporte { get; set; }
 
     public decimal Subtotal { get; set; }
     public decimal Descuento { get; set; }

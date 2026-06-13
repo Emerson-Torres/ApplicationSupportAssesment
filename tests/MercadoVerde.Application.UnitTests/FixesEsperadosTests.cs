@@ -58,6 +58,34 @@ public class FixesEsperadosTests
     }
 
     // ====================================================================
+    // Cambio de requerimiento — Ningún cupón puede superar $15.00 por pedido
+    // ====================================================================
+    [Fact]
+    public void CuponConDescuentoAlto_SeTopeaYDejaConstanciaParaSoporte()
+    {
+        using var db = NuevaBdEnMemoria();
+        db.Clientes.Add(new Cliente { Id = 1, Nombre = "Ana", Email = "ana@example.com" });
+        db.Productos.Add(new Producto { Id = 1, Nombre = "Producto", Precio = 100m, Stock = 10, Activo = true });
+        db.Cupones.Add(new Cupon { Id = 1, Codigo = "MEGA50", PorcentajeDescuento = 50m,
+            FechaExpiracionUtc = DateTime.UtcNow.AddYears(1), Activo = true });
+        db.SaveChanges();
+
+        var pedido = NuevoServicio(db, new PasarelaAprueba()).CrearPedido(new CrearPedidoDto
+        {
+            ClienteId = 1,
+            CodigoCupon = "MEGA50",
+            Lineas = { new LineaPedidoDto { ProductoId = 1, Cantidad = 1 } }
+        });
+
+        pedido.Subtotal.Should().Be(100m);
+        pedido.Descuento.Should().Be(15.00m);
+        pedido.Impuesto.Should().Be(11.05m);
+        pedido.Total.Should().Be(96.05m);
+        pedido.NotaSoporte.Should().Contain("tope");
+        pedido.NotaSoporte.Should().Contain("MEGA50");
+    }
+
+    // ====================================================================
     // TICK-203 — Un cupón inexistente no debe reventar con NullReference (500)
     // ====================================================================
     [Fact]

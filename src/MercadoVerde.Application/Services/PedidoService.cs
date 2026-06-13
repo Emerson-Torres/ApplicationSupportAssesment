@@ -8,6 +8,7 @@ namespace MercadoVerde.Application.Services;
 public class PedidoService
 {
     private const decimal TasaImpuesto = 0.13m; // IVA 13%
+    private const decimal TopeDescuentoPorPedido = 15.00m;
 
     private readonly ITiendaDbContext _db;
     private readonly InventarioService _inventario;
@@ -61,7 +62,16 @@ public class PedidoService
             // Validar vigencia del cupón
             if (cupon != null && cupon.FechaExpiracionUtc >= DateTime.Now && cupon.Activo)
             {
-                descuento = subtotal * (cupon.PorcentajeDescuento / 100m);
+                var descuentoCalculado = subtotal * (cupon.PorcentajeDescuento / 100m);
+                descuento = Math.Min(descuentoCalculado, TopeDescuentoPorPedido);
+
+                if (descuentoCalculado > TopeDescuentoPorPedido)
+                {
+                    pedido.NotaSoporte =
+                        $"Cupón {cupon.Codigo} superó el tope de ${TopeDescuentoPorPedido:0.00}: " +
+                        $"descuento calculado ${descuentoCalculado:0.00}, aplicado ${descuento:0.00}.";
+                    Console.Error.WriteLine($"[Cupon] {pedido.NotaSoporte}");
+                }
             }
         }
 
