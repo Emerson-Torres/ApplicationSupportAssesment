@@ -17,4 +17,10 @@ public interface ITiendaDbContext
     DbSet<LineaPedido> LineasPedido { get; }
 
     int SaveChanges();
+
+    /// <summary>
+    /// Descuenta stock de forma atómica con un UPDATE condicional (Stock >= cantidad).
+    /// Retorna el número de filas afectadas (0 si no había stock suficiente).
+    /// </summary>
+    int DescontarStockAtomico(int productoId, int cantidad);
 }

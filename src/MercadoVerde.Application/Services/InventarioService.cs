@@ -12,20 +12,20 @@ public class InventarioService
         _db = db;
     }
 
-    // Descuenta 'cantidad' unidades del stock del producto.
-    // Este método es invocado al confirmar cada pedido.
+    // Descuenta 'cantidad' unidades del stock del producto de forma atómica.
+    // Delega en ITiendaDbContext.DescontarStockAtomico que genera un UPDATE condicional
+    // (Stock >= cantidad). Si dos hilos compiten, solo uno afectará filas.
     public void DescontarStock(int productoId, int cantidad)
     {
-        var producto = _db.Productos.FirstOrDefault(p => p.Id == productoId);
-        if (producto == null)
+        // Verificar primero que el producto existe (error de dominio distinto a stock insuficiente).
+        var existe = _db.Productos.Any(p => p.Id == productoId);
+        if (!existe)
             throw new InvalidOperationException($"Producto {productoId} no existe.");
 
-        // Se lee el stock, se valida y luego se actualiza.
-        if (producto.Stock < cantidad)
-            throw new InvalidOperationException(
-                $"Stock insuficiente para el producto {producto.Nombre}.");
+        var filasAfectadas = _db.DescontarStockAtomico(productoId, cantidad);
 
-        producto.Stock = producto.Stock - cantidad;
-        _db.SaveChanges();
+        if (filasAfectadas == 0)
+            throw new InvalidOperationException(
+                $"Stock insuficiente para el producto {productoId}.");
     }
 }

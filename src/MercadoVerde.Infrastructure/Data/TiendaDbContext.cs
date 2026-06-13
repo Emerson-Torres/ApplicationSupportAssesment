@@ -20,4 +20,12 @@ public class TiendaDbContext : DbContext, ITiendaDbContext
         modelBuilder.Entity<Pedido>().Property(p => p.Total).HasColumnType("decimal(18,2)");
         base.OnModelCreating(modelBuilder);
     }
+
+    /// <inheritdoc />
+    public int DescontarStockAtomico(int productoId, int cantidad)
+    {
+        return Productos
+            .Where(p => p.Id == productoId && p.Stock >= cantidad)
+            .ExecuteUpdate(s => s.SetProperty(p => p.Stock, p => p.Stock - cantidad));
+    }
 }
