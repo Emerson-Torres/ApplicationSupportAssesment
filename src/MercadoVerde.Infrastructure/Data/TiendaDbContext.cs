@@ -24,8 +24,18 @@ public class TiendaDbContext : DbContext, ITiendaDbContext
     /// <inheritdoc />
     public int DescontarStockAtomico(int productoId, int cantidad)
     {
-        return Productos
-            .Where(p => p.Id == productoId && p.Stock >= cantidad)
-            .ExecuteUpdate(s => s.SetProperty(p => p.Stock, p => p.Stock - cantidad));
+        if (Database.IsRelational())
+        {
+            return Productos
+                .Where(p => p.Id == productoId && p.Stock >= cantidad)
+                .ExecuteUpdate(s => s.SetProperty(p => p.Stock, p => p.Stock - cantidad));
+        }
+
+        var producto = Productos.FirstOrDefault(p => p.Id == productoId);
+        if (producto == null || producto.Stock < cantidad)
+            return 0;
+
+        producto.Stock -= cantidad;
+        return SaveChanges();
     }
 }

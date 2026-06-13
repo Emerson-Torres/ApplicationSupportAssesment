@@ -66,7 +66,8 @@ public class PedidoService
         }
 
         // 3) Calcular impuesto y total
-        decimal impuesto = subtotal * TasaImpuesto;
+        var baseImponible = subtotal - descuento;
+        decimal impuesto = baseImponible * TasaImpuesto;
         decimal total = subtotal - descuento + impuesto;
 
         pedido.Subtotal = subtotal;
