@@ -17,6 +17,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+function stockBadgeVariant(stock: number) {
+  if (stock <= 2) return "warning";
+  return "success";
+}
+
+function stockBadgeLabel(stock: number) {
+  if (stock <= 0) return "Sin stock";
+  if (stock <= 2) return "Stock bajo";
+  return "En stock";
+}
+
 export function BuscadorProductos() {
   const [termino, setTermino] = useState("");
   const [resultados, setResultados] = useState<Producto[]>([]);
@@ -111,8 +122,8 @@ export function BuscadorProductos() {
                       {formatearMoneda(p.Precio)}
                     </p>
                   </div>
-                  <Badge variant={p.Stock > 0 ? "success" : "warning"}>
-                    {p.Stock} en stock
+                  <Badge variant={stockBadgeVariant(p.Stock)}>
+                    {stockBadgeLabel(p.Stock)}: {p.Stock}
                   </Badge>
                 </div>
               ))}
