@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 
 import { buscarProductos } from "@/lib/api";
@@ -34,44 +34,94 @@ export function BuscadorProductos() {
   const [buscado, setBuscado] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<number | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Búsqueda "mientras escribes": se dispara con cada cambio del término para
   // que los resultados se sientan instantáneos.
   useEffect(() => {
     if (!termino) {
+      if (debounceRef.current !== null) {
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      abortRef.current?.abort();
+      abortRef.current = null;
       setResultados([]);
       setBuscado(false);
       setError(null);
       return;
     }
+
+    if (debounceRef.current !== null) {
+      window.clearTimeout(debounceRef.current);
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setCargando(true);
-    buscarProductos(termino)
-      .then((productos) => {
-        setResultados(productos);
-        setBuscado(true);
-        setError(null);
-      })
-      .catch((err: unknown) => {
-        setResultados([]);
-        setBuscado(true);
-        setError(err instanceof Error ? err.message : "Error desconocido");
-      })
-      .finally(() => setCargando(false));
+    debounceRef.current = window.setTimeout(() => {
+      buscarProductos(termino, { signal: controller.signal })
+        .then((productos) => {
+          setResultados(productos);
+          setBuscado(true);
+          setError(null);
+        })
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === "AbortError") {
+            return;
+          }
+
+          setResultados([]);
+          setBuscado(true);
+          setError(err instanceof Error ? err.message : "Error desconocido");
+        })
+        .finally(() => {
+          if (abortRef.current === controller) {
+            setCargando(false);
+          }
+        });
+    }, 300);
+
+    return () => {
+      if (debounceRef.current !== null) {
+        window.clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      controller.abort();
+    };
   }, [termino]);
 
   async function ejecutarBusqueda() {
+    if (debounceRef.current !== null) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setError(null);
     setCargando(true);
     try {
-      const productos = await buscarProductos(termino);
+      const productos = await buscarProductos(termino, { signal: controller.signal });
       setResultados(productos);
       setBuscado(true);
     } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return;
+      }
+
       setResultados([]);
       setBuscado(true);
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
-      setCargando(false);
+      if (abortRef.current === controller) {
+        setCargando(false);
+      }
     }
   }
 

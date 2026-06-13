@@ -17,8 +17,14 @@ async function leerErrorRespuesta(res: Response): Promise<string> {
   }
 }
 
-export async function buscarProductos(termino: string): Promise<Producto[]> {
-  const res = await fetch(`${API_BASE}/api/productos/buscar?termino=${termino}`);
+export async function buscarProductos(
+  termino: string,
+  options?: { signal?: AbortSignal }
+): Promise<Producto[]> {
+  const res = await fetch(
+    `${API_BASE}/api/productos/buscar?termino=${encodeURIComponent(termino)}`,
+    { signal: options?.signal }
+  );
   if (!res.ok) {
     throw new Error(await leerErrorRespuesta(res));
   }
