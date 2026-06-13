@@ -1,4 +1,5 @@
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using MercadoVerde.Application.Abstractions;
 
 namespace MercadoVerde.Application.Services;
@@ -25,22 +26,19 @@ public class ReporteService
     public List<FilaReporte> GenerarReporteVentas(DateTime desdeUtc, DateTime hastaUtc)
     {
         var pedidos = _db.Pedidos
+            .Include(p => p.Cliente)
+            .Include(p => p.Lineas)
             .Where(p => p.FechaUtc >= desdeUtc && p.FechaUtc <= hastaUtc)
             .ToList();
 
         var filas = new List<FilaReporte>();
         foreach (var pedido in pedidos)
         {
-            // Por cada pedido se vuelve a la base de datos a traer sus líneas
-            // y el nombre del cliente.
-            var lineas = _db.LineasPedido.Where(l => l.PedidoId == pedido.Id).ToList();
-            var cliente = _db.Clientes.FirstOrDefault(c => c.Id == pedido.ClienteId);
-
             filas.Add(new FilaReporte
             {
                 PedidoId = pedido.Id,
-                Cliente = cliente?.Nombre ?? "(desconocido)",
-                CantidadArticulos = lineas.Sum(l => l.Cantidad),
+                Cliente = pedido.Cliente?.Nombre ?? "(desconocido)",
+                CantidadArticulos = pedido.Lineas.Sum(l => l.Cantidad),
                 Total = pedido.Total
             });
         }

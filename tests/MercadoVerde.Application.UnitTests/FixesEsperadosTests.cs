@@ -143,6 +143,40 @@ public class FixesEsperadosTests
         repo.BuscarPorNombre("' OR 1=1 --").Should().BeEmpty();
     }
 
+    // ====================================================================
+    // TICK-204 — El reporte no debe hacer N+1 queries por pedido
+    // ====================================================================
+    [Fact]
+    public void TICK204_ReporteVentas_DevuelveFilasConClienteYLíneasCargadas()
+    {
+        using var db = NuevaBdEnMemoria();
+        db.Clientes.Add(new Cliente { Id = 1, Nombre = "Ana", Email = "ana@example.com" });
+        db.Pedidos.Add(new Pedido
+        {
+            Id = 10,
+            ClienteId = 1,
+            FechaUtc = new DateTime(2026, 6, 2, 12, 0, 0, DateTimeKind.Utc),
+            Total = 120m,
+            Lineas =
+            {
+                new LineaPedido { Id = 1, PedidoId = 10, ProductoId = 1, Cantidad = 2, PrecioUnitario = 50m },
+                new LineaPedido { Id = 2, PedidoId = 10, ProductoId = 2, Cantidad = 1, PrecioUnitario = 20m }
+            }
+        });
+        db.SaveChanges();
+
+        var service = new ReporteService(db);
+        var filas = service.GenerarReporteVentas(
+            new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc),
+            new DateTime(2026, 6, 3, 23, 59, 59, DateTimeKind.Utc));
+
+        filas.Should().ContainSingle();
+        filas[0].PedidoId.Should().Be(10);
+        filas[0].Cliente.Should().Be("Ana");
+        filas[0].CantidadArticulos.Should().Be(3);
+        filas[0].Total.Should().Be(120m);
+    }
+
     // ---------- pasarelas de prueba ----------
 
     private sealed class PasarelaAprueba : IPasarelaPagoService
