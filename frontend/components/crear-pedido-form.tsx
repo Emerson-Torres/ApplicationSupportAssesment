@@ -62,6 +62,10 @@ export function CrearPedidoForm() {
     setLineas(copia);
   }
 
+  function hayCantidadesInvalidas() {
+    return lineas.some((linea) => !Number.isFinite(linea.cantidad) || linea.cantidad <= 0);
+  }
+
   const totalEstimado = calcularTotalEstimado(
     lineas,
     Number(porcentajeCupon)
@@ -69,6 +73,11 @@ export function CrearPedidoForm() {
 
   async function enviar() {
     if (enviando) return;
+
+    if (hayCantidadesInvalidas()) {
+      setError("Cada línea del pedido debe tener una cantidad mayor a 0.");
+      return;
+    }
 
     setError(null);
     setEnviando(true);
@@ -163,6 +172,8 @@ export function CrearPedidoForm() {
                   <span className="text-xs text-muted-foreground">Cantidad</span>
                   <Input
                     type="number"
+                    min={1}
+                    step={1}
                     value={linea.cantidad}
                     onChange={(e) =>
                       actualizarLinea(
@@ -205,7 +216,7 @@ export function CrearPedidoForm() {
             </div>
           </div>
 
-          <Button onClick={enviar} disabled={enviando} type="button">
+          <Button onClick={enviar} disabled={enviando || hayCantidadesInvalidas()} type="button">
             {enviando ? "Procesando..." : "Confirmar y cobrar pedido"}
           </Button>
         </CardContent>
