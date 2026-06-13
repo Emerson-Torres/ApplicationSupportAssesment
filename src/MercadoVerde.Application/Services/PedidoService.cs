@@ -83,10 +83,13 @@ public class PedidoService
             else
                 pedido.Estado = EstadoPedido.Rechazado;
         }
-        catch
+        catch (Exception ex)
         {
-            // El cobro falló por indisponibilidad del proveedor.
-            pedido.Estado = EstadoPedido.Pagado;
+            // El cobro falló por indisponibilidad del proveedor: el pedido queda
+            // Pendiente para que conciliación lo reintente. NUNCA se marca Pagado
+            // sin confirmación de la pasarela.
+            pedido.Estado = EstadoPedido.Pendiente;
+            Console.Error.WriteLine($"[PasarelaPago] Excepción al cobrar pedido cliente={cliente.Id}: {ex.Message}");
         }
 
         // 5) Descontar inventario
